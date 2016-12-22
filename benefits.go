@@ -24,23 +24,30 @@ type Prescription struct {
 }
 
 func (b *Plan) PayFor(n USD) (theyPay USD, youPay USD) {
-	n -= b.subtractFromDeductible(n)
-	if b.Deductible > 0 {
+	remainder := b.subtractFromDeductible(n)
+	switch {
+	case b.Deductible > 0:
+		if b.MaximumOutOfPocket > 0 {
+			b.MaximumOutOfPocket -= n
+		}
 		return 0.0, n
-	}
-
-	if b.MaximumOutOfPocket == 0 {
+	case b.Deductible == 0 && remainder == 0 && b.MaximumOutOfPocket > 0:
+		if b.MaximumOutOfPocket > 0 {
+			b.MaximumOutOfPocket -= n
+		}
+		return 0.0, n
+	case b.MaximumOutOfPocket == 0:
 		return n, 0.0
 	}
 
-	//TODO(aoeu): Write unit tests because you know better than to do cruft like this.
-	yourPercentage := float64(b.Coinsurance) * 0.1
+	yourPercentage := float64(b.Coinsurance) * 0.01
 	theirPercentage := 1.0 - yourPercentage
 
 	theyPay = USD(float64(n) * theirPercentage)
 	copay := USD(float64(n) * yourPercentage)
 
 	youPay += copay
+
 	if r := b.subtractFromMaximumOutOfPocket(copay); r > 0 {
 		theyPay += r
 		youPay -= r
