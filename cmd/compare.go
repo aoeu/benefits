@@ -34,19 +34,27 @@ var tweedleDumb = benefits.Plan{
 	Coinsurance:        30,
 }
 
-func calc(b benefits.Plan) {
-	var youPay benefits.USD = 0.0
-	var theyPay benefits.USD = 0.0
+func c(b benefits.Plan) (theyPay benefits.USD, youPay benefits.USD) {
 	for i := 0; i < 12; i++ {
-		t, u := b.PayFor(foo.CostPerVisit)
+		t, u := b.PayFor(foo.Cost() * 4)
 		theyPay += t
 		youPay += u
-		fmt.Println(b)
-		fmt.Printf("You've paid %v, They've paid %v\n", youPay, theyPay)
+
+		t, u = b.PayFor(bar.Cost())
+		theyPay += t
+		youPay += u
+
+		t, u = b.PayFor(baz.Cost())
+		theyPay += t
+		youPay += u
 	}
+	return theyPay, youPay
 }
 
 func main() {
-	calc(tweedleDee)
-	calc(tweedleDumb)
+	t, u := c(tweedleDee)
+	s := "On plan %v\n\tyou'd pay %v\n\tthey'd pay %v.\n"
+	fmt.Printf(s, tweedleDee.Name, u, t)
+	t, u = c(tweedleDumb)
+	fmt.Printf(s, tweedleDumb.Name, u, t)
 }

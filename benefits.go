@@ -4,6 +4,8 @@ type Percentage int
 type USD float64
 type Name string
 
+
+
 // TODO(aoeu): Everything here considers out of network.
 
 type Plan struct {
@@ -13,14 +15,43 @@ type Plan struct {
 	Coinsurance        Percentage
 }
 
+type Coster interface {
+	Cost() USD
+}
+
+type Freqer interface {
+	Freq() int
+}
+
+type CosterFreqer interface {
+	Coster
+	Freqer
+}
+
 type Doctor struct {
 	CostPerVisit  USD
 	VisitsPerYear int
 }
 
+func (d Doctor) Cost() USD {
+	return d.CostPerVisit
+}
+
+func (d Doctor) Freq() int {
+	return d.VisitsPerYear
+}
+
 type Prescription struct {
 	CostPerRefill  USD // Insured.
 	RefillsPerYear int
+}
+
+func (p Prescription) Cost() USD {
+	return p.CostPerRefill
+}
+
+func (p Prescription) Freq() int {
+	return p.RefillsPerYear
 }
 
 func (b *Plan) PayFor(n USD) (theyPay USD, youPay USD) {
@@ -53,6 +84,15 @@ func (b *Plan) PayFor(n USD) (theyPay USD, youPay USD) {
 		youPay -= r
 	}
 
+	return theyPay, youPay
+}
+
+func (b *Plan) Buy(c CosterFreqer) (theyPay USD, youPay USD) {
+	for i := 0; i < c.Freq(); i++ {
+		t, u := b.PayFor(c.Cost())
+		theyPay += t
+		youPay += u
+	}
 	return theyPay, youPay
 }
 
